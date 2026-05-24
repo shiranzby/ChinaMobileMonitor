@@ -6,7 +6,6 @@
 
 - **多号码管理** — 一个配置文件管理多个手机号，每个号码独立登录状态
 - **纯 API 查询** — 登录一次后，后续查询通过 API 拦截获取，无需人工干预
-- **智能流量单位** — 根据 API 返回的 `unit` 字段自动换算（MB/GB）
 - **7 种通知推送渠道** — SMTP / PushPlus / Server酱 / Bark / Telegram / 企业微信 / 钉钉 / 飞书 / 自定义 Webhook
 - **灵活输出控制** — 全局默认 + 每号独立覆盖，按需开关任意字段
 - **I/O 密集型并发** — 多账号查询使用 `asyncio.gather` 并发，速度快
@@ -53,8 +52,8 @@ python chinamobile.py --login 15797715975
     "查询时间": 1
   },
   "手机号": [
-    { "号码": "18284888674" },
-    { "号码": "15797715975" }
+    { "号码": "182****8674" },
+    { "号码": "157****5975" }
   ]
 }
 ```
@@ -66,13 +65,13 @@ python chinamobile.py --login 15797715975
 python chinamobile.py --query
 
 # 查询指定号码
-python chinamobile.py --query 18284888674
+python chinamobile.py --query 182****8674
 
 # 查询并保存原始 API 响应
 python chinamobile.py --query --json
 
 # 用已保存的登录状态打开浏览器
-python chinamobile.py --open 18284888674
+python chinamobile.py --open 182****8674
 ```
 
 ### Windows 用户
@@ -138,7 +137,7 @@ python chinamobile.py --open 18284888674
   },
   "手机号": [
     {
-      "号码": "18284888674",
+      "号码": "182****8674",
       "输出设置": {
         "实时费用": 1,
         "本月账单": 1
@@ -213,10 +212,10 @@ ChinaMobileMonitor/
 ├── chinamobile_config.json         # 实际配置（需自建，含敏感信息）
 ├── chinamobile_capture.py         # API 捕获工具，用于调试
 ├── chinamobile_data/              # 数据目录（每个号码独立子目录）
-│   ├── 18284888674/
+│   ├── 182****8674/
 │   │   ├── playwright_user_data/  # 该号码的登录状态
 │   │   └── query_results/        # 查询结果 JSON（--json 时）
-│   └── 15797715975/
+│   └── 157****5975/
 │       └── ...
 ├── requirements.txt               # Python 依赖
 ├── 查询话费.bat                 # Windows 快捷启动
@@ -254,10 +253,6 @@ ChinaMobileMonitor/
 2. **验证码** — 登录时需要手动输入短信验证码（脚本会等待用户输入）
 3. **账单查询较慢** — `本月账单`/`实际应缴`/`优惠合计` 需要访问账单页面，默认关闭，需要时再在配置文件中开启
 4. **Windows 路径** — 脚本在 Windows 下使用 Git Bash 路径格式（`/c/Users/...`）
-
-## 致谢
-
-感谢 [gsons/boxjs](https://github.com/gsons/boxjs) 仓库提供的中国移动接口数据与分析。
 
 ## 免责声明
 
