@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python/
+chinamobile_config.json
+chinamobile_data/
+telecom_config.json
+telecom_tokens/
+.env
+*.bat
