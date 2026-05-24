@@ -203,26 +203,6 @@ python chinamobile.py --open 182****8674
 }
 ```
 
-## 项目结构
-
-```
-ChinaMobileMonitor/
-├── chinamobile.py                 # 主脚本（登录 + 查询 + 通知推送）
-├── chinamobile_config.example.json  # 配置文件模板（脱敏）
-├── chinamobile_config.json         # 实际配置（需自建，含敏感信息）
-├── chinamobile_capture.py         # API 捕获工具，用于调试
-├── chinamobile_data/              # 数据目录（每个号码独立子目录）
-│   ├── 182****8674/
-│   │   ├── playwright_user_data/  # 该号码的登录状态
-│   │   └── query_results/        # 查询结果 JSON（--json 时）
-│   └── 157****5975/
-│       └── ...
-├── requirements.txt               # Python 依赖
-├── 查询话费.bat                 # Windows 快捷启动
-├── .gitignore
-└── README.md
-```
-
 ## 技术说明
 
 ### API 拦截原理
@@ -315,6 +295,27 @@ docker-compose up --build
 2. 在本地运行 `python chinamobile.py --login 你的手机号` 完成登录
 3. 将 `chinamobile_data/` 整个目录上传/复制到青龙脚本同级目录
 4. 在青龙「定时任务」中新建任务，命令填 `task chinamobile.py --query`
+
+
+## 项目结构
+
+```
+ChinaMobileMonitor/
+├── chinamobile.py                 # 主脚本（登录 + 查询 + 通知推送）
+├── chinamobile_config.example.json  # 配置文件模板（脱敏）
+├── chinamobile_config.json         # 实际配置（需自建，含敏感信息）
+├── chinamobile_capture.py         # API 捕获工具，用于调试
+├── chinamobile_data/              # 数据目录（每个号码独立子目录）
+│   ├── 182****8674/
+│   │   ├── playwright_user_data/  # 该号码的登录状态
+│   │   └── query_results/        # 查询结果 JSON（--json 时）
+│   └── 157****5975/
+│       └── ...
+├── requirements.txt               # Python 依赖
+├── 查询话费.bat                 # Windows 快捷启动
+├── .gitignore
+└── README.md
+```
 
 ## 免责声明
 
