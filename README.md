@@ -253,6 +253,71 @@ ChinaMobileMonitor/
 2. **账单查询较慢** — `本月账单`/`实际应缴`/`优惠合计` 需要访问账单页面，默认关闭，需要时再在配置文件中开启
 3. **Windows 路径** — 脚本在 Windows 下使用 Git Bash 路径格式（`/c/Users/...`）
 
+## Docker 部署
+
+容器化部署适合服务器定时运行，无需本地环境。
+
+### 快速启动
+
+```bash
+# 构建镜像
+docker build -t chinamobile-monitor .
+
+# 首次登录（需要交互输入验证码，需挂载数据目录）
+docker run -it --rm \
+  -v $(pwd)/chinamobile_config.json:/app/chinamobile_config.json:ro \
+  -v $(pwd)/chinamobile_data:/app/chinamobile_data \
+  chinamobile-monitor \
+  python chinamobile.py --login 138xxxx1234
+
+# 日常查询（非交互，直接输出结果）
+docker run --rm \
+  -v $(pwd)/chinamobile_config.json:/app/chinamobile_config.json:ro \
+  -v $(pwd)/chinamobile_data:/app/chinamobile_data \
+  chinamobile-monitor
+```
+
+> Windows PowerShell 下把 `$(pwd)` 替换为 `${PWD}`。
+
+### 使用 docker-compose
+
+```bash
+# 编辑 docker-compose.yml，配置好 volumes 路径
+docker-compose up --build
+```
+
+### 目录说明
+
+| 本地路径 | 容器内路径 | 说明 |
+|-----------|-------------|------|
+| `chinamobile_config.json` | `/app/chinamobile_config.json` | 配置文件（需自行创建） |
+| `chinamobile_data/` | `/app/chinamobile_data/` | 登录状态 + 查询结果 |
+
+### 定时运行（crontab）
+
+```bash
+# 每天早上 7:30 执行查询
+30 7 * * * cd /path/to/ChinaMobileMonitor && docker-compose run --rm chinamobile-monitor >> /tmp/mobile_query.log 2>&1
+```
+
+## 青龙面板适配
+
+详见 [QINGLONG.md](./QINGLONG.md)
+
+**核心思路：**
+
+- 青龙环境**支持 Playwright**时：直接在青龙依赖管理中安装 `playwright`，然后执行 `playwright install chromium`
+- 青龙环境**不支持 Playwright**时（资源受限）：在本地完成登录，将 `chinamobile_data/<手机号>/playwright_user_data/` 目录**手动复制到青龙对应路径**，即可免浏览器查询
+
+**快速步骤：**
+
+1. 将 `chinamobile.py` 上传到青龙「脚本管理」
+2. 在本地运行 `python chinamobile.py --login 你的手机号` 完成登录
+3. 将 `chinamobile_data/` 整个目录上传/复制到青龙脚本同级目录
+4. 在青龙「定时任务」中新建任务，命令填 `task chinamobile.py --query`
+
+> 登录状态有效期约 7~30 天，过期后重新执行步骤 2~3 即可。
+
 ## 免责声明
 
 本项目仅供个人学习和研究使用。请勿用于任何商业或非法用途。使用本工具所产生的任何后果由使用者自行承担。请合理使用，避免频繁调用对移动服务器造成压力。

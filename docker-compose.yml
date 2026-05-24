@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  chinamobile-monitor:
+    build: .
+    container_name: chinamobile-monitor
+    restart: unless-stopped
+    volumes:
+      # 挂载配置文件（需自行创建 chinamobile_config.json）
+      - ./chinamobile_config.json:/app/chinamobile_config.json:ro
+      # 挂载数据目录（保存登录状态、查询结果）
+      - ./chinamobile_data:/app/chinamobile_data
+    # 默认运行查询
+    command: python chinamobile.py --query
+    # 如需调试，可改为：
+    # command: python chinamobile.py --login 138xxxx1234
+    network_mode: "host"
