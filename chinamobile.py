@@ -32,12 +32,15 @@
         查询时间     数据获取的时间戳
 """
 
+import argparse
 import asyncio
+import concurrent.futures
 import sys
 import json
 import os
 import re
 import base64
+import binascii
 import hashlib
 import hmac as _hmac
 import urllib.parse
