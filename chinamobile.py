@@ -5,11 +5,11 @@
 中国移动 10086 自动查询脚本（多号码支持）
 
 用法:
-    python chinamobile.py --login 18284888674        # 登录并保存该号码状态
+    python chinamobile.py --login 18212348674        # 登录并保存该号码状态
     python chinamobile.py --query                   # 查询配置文件中的所有号码
-    python chinamobile.py --query 18284888674    # 查询指定号码
+    python chinamobile.py --query 18212348674    # 查询指定号码
     python chinamobile.py --query --json            # 查询并保存原始 API 响应
-    python chinamobile.py --open  18284888674    # 用该号码的登录状态打开浏览器
+    python chinamobile.py --open  18212348674    # 用该号码的登录状态打开浏览器
     python chinamobile.py --help                   # 显示帮助
 
 配置文件: chinamobile_config.json（JSON 不支持注释，字段名即为说明）
@@ -1004,11 +1004,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  python chinamobile.py --login 18284888674        # 登录并保存状态
+  python chinamobile.py --login 18212348674        # 登录并保存状态
   python chinamobile.py --query                   # 查询所有号码
-  python chinamobile.py --query 18284888674    # 查询指定号码
+  python chinamobile.py --query 18212348674    # 查询指定号码
   python chinamobile.py --query --json            # 查询并保存原始数据
-  python chinamobile.py --open  18284888674    # 打开浏览器（该号码状态）
+  python chinamobile.py --open  18212348674    # 打开浏览器（该号码状态）
 """)
     parser.add_argument("--login",  help="登录并保存指定手机号的状态", type=str, default=None)
     parser.add_argument("--query",  help="查询话费/流量/语音（可指定手机号）", nargs="?", const="", default=None)

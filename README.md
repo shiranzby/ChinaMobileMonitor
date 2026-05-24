@@ -25,10 +25,10 @@ playwright install chromium
 
 ```bash
 # 登录第一个号码（会打开浏览器，需要手动输入验证码）
-python chinamobile.py --login 18284888674
+python chinamobile.py --login 18212348674
 
 # 登录第二个号码
-python chinamobile.py --login 15797715975
+python chinamobile.py --login 15712345975
 ```
 
 登录成功后，状态会保存到 `chinamobile_data/<手机号>/playwright_user_data/`。

@@ -4,9 +4,9 @@
 中国移动 10086 API 捕获脚本
 用途：用已登录状态打开浏览器，拦截并记录所有 API 请求/响应
 用法：
-    python chinamobile_capture.py 18284888674          # 捕获该手机号的所有 API
-    python chinamobile_capture.py 18284888674 --url  # 只打印 URL，不保存响应体（更清晰）
-    python chinamobile_capture.py 18284888674 --out my_capture.json  # 指定输出文件
+    python chinamobile_capture.py 18212348674          # 捕获该手机号的所有 API
+    python chinamobile_capture.py 18212348674 --url  # 只打印 URL，不保存响应体（更清晰）
+    python chinamobile_capture.py 18212348674 --out my_capture.json  # 指定输出文件
 输出：
     chinamobile_data/<phone>/captured_apis/<timestamp>.json
     控制台实时打印所有捕获到的 API URL
@@ -206,9 +206,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  python chinamobile_capture.py 18284888674                # 完整捕获
-  python chinamobile_capture.py 18284888674 --url         # 只打印 URL
-  python chinamobile_capture.py 18284888674 --out a.json  # 指定输出文件
+  python chinamobile_capture.py 18212348674                # 完整捕获
+  python chinamobile_capture.py 18212348674 --url         # 只打印 URL
+  python chinamobile_capture.py 18212348674 --out a.json  # 指定输出文件
 """,
     )
     parser.add_argument("phone",   help="手机号（需已登录）")
