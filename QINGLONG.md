@@ -94,11 +94,6 @@ python chinamobile.py --query 138xxxx1234
 
 能正常输出查询结果即说明登录状态有效。
 
-#### ④ 登录状态过期后
-
-重复①~③步骤，覆盖上传新的 `playwright_user_data/` 目录即可。  
-通常有效期为 7~30 天，视移动风控策略而定。
-
 ---
 
 ## 通知推送（青龙环境）
@@ -124,12 +119,6 @@ def send_notify(title, body, notify_config):
 ---
 
 ## 常见问题
-
-**Q：青龙里 playwright install 失败，磁盘空间不足？**  
-A：Chromium 及其依赖约需 500MB 空间。可清理青龙镜像或换用方案二。
-
-**Q：复制登录状态后提示「登录状态已过期」？**  
-A：移动登录状态通常有有效期，过期后需重新在本地登录并重新上传。
 
 **Q：多号码怎么配置？**  
 A：在 `chinamobile_config.json` 的 `手机号` 列表中添加多个号码即可，查询时会自动并发执行。
