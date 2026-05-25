@@ -2,12 +2,12 @@
 
 ## 背景
 
-青龙面板（Qinglong）是一个定时任务管理平台，支持 Python 脚本定时执行。  
-由于青龙的容器环境**不一定支持 Playwright 浏览器**，此处提供两种适配方案。
+青龙面板（Qinglong）是一个定时任务管理平台，支持 Python 脚本定时执行。
+本脚本依赖 Playwright 浏览器，需在青龙环境中安装 Playwright 及 Chromium 方可全功能运行。
 
 ---
 
-## 方案一：青龙环境安装 Playwright（推荐，全自动）
+## 青龙环境安装 Playwright（全功能）
 
 ### 1. 在青龙「依赖管理」中安装 Python 依赖
 
@@ -45,60 +45,10 @@ playwright install chromium --with-deps
 
 ---
 
-## 方案二：手动复制登录状态（Playwright 不可用时的兜底方案）
-
-如果青龙环境无法安装 Chromium（资源受限、权限不足等），可改用此方案：
-
-### 原理
-
-登录状态保存在 `chinamobile_data/<手机号>/playwright_user_data/` 目录中。  
-只需在**有浏览器的机器上**完成登录，然后**将整个目录复制到青龙对应路径**即可。
-
-### 步骤
-
-#### ① 在本地（Windows/Mac）完成登录
-
-```bash
-python chinamobile.py --login 138xxxx1234
-```
-
-登录成功后，本地会生成：
-```
-chinamobile_data/
-  138xxxx1234/
-    playwright_user_data/   ← 这就是登录状态
-```
-
-#### ② 将登录状态目录上传到青龙
-
-**方式 A：青龙 Web 上传**
-
-1. 打开青龙「脚本管理」
-2. 新建目录 `chinamobile_data/138xxxx1234/`
-3. 将本地 `playwright_user_data/` 整个文件夹上传到该目录下
-
-**方式 B：SSH/SCP 上传**
-
-```bash
-# 在本地执行（需青龙 SSH 可达）
-scp -r chinamobile_data/138xxxx1234/ root@<青龙IP>:/ql/data/scripts/chinamobile_data/138xxxx1234/
-```
-
-#### ③ 在青龙中验证
-
-在青龙「终端」中执行：
-
-```bash
-python chinamobile.py --query 138xxxx1234
-```
-
-能正常输出查询结果即说明登录状态有效。
-
----
-
 ## 通知推送（青龙环境）
 
-青龙内置通知系统，可直接调用环境变量推送结果。  
+青龙内置通知系统，可直接调用环境变量推送结果。
+
 修改 `chinamobile.py` 的 `send_notify()` 函数，在推送逻辑中增加青龙通知调用：
 
 ```python
@@ -120,5 +70,8 @@ def send_notify(title, body, notify_config):
 
 ## 常见问题
 
-**Q：多号码怎么配置？**  
+**Q：多号码怎么配置？**
 A：在 `chinamobile_config.json` 的 `手机号` 列表中添加多个号码即可，查询时会自动并发执行。
+
+**Q：登录时提示需要验证码怎么办？**
+A：首次登录需要手动输入短信验证码。可在本地完成登录后，将整个项目目录（含 `chinamobile_data/`）上传到青龙，后续查询无需再次登录。

@@ -6,11 +6,13 @@
 
 - **多号码管理** — 一个配置文件管理多个手机号，每个号码独立登录状态
 - **纯 API 查询** — 登录一次后，后续查询通过 API 拦截获取，无需人工干预
-- **7 种通知推送渠道** — SMTP / PushPlus / Server酱 / Bark / Telegram / 企业微信 / 钉钉 / 飞书 / 自定义 Webhook
+- **8 种通知推送渠道** — SMTP / PushPlus / Server酱 / Bark / Telegram / 企业微信 / 钉钉 / 飞书 / 自定义 Webhook
 - **灵活输出控制** — 全局默认 + 每号独立覆盖，按需开关任意字段
 - **I/O 密集型并发** — 多账号查询使用 `asyncio.gather` 并发，速度快
 - **登录状态持久化** — Playwright 持久化上下文保存登录状态
 - **全中文配置** — JSON 配置文件全部使用中文键名，直观易读
+- **Docker 部署** — 支持容器化部署，适合服务器定时运行
+- **青龙面板适配** — 可在青龙定时任务中直接运行
 
 ## 快速开始
 
@@ -52,8 +54,8 @@ python chinamobile.py --login 15712345975
     "查询时间": 1
   },
   "手机号": [
-    { "号码": "182****8674" },
-    { "号码": "157****5975" }
+    {"号码": "182****8674"},
+    {"号码": "157****5975"}
   ]
 }
 ```
@@ -76,7 +78,8 @@ python chinamobile.py --open 182****8674
 
 ### Windows 用户
 
-双击 `查询话费.bat` 即可查询配置文件中的所有号码。
+- 双击 `查询话费.bat` 即可查询配置文件中的所有号码
+- 双击 `登录.bat` 可交互输入手机号并打开浏览器登录
 
 ## 输出示例
 
@@ -203,36 +206,6 @@ python chinamobile.py --open 182****8674
 }
 ```
 
-## 技术说明
-
-### API 拦截原理
-
-脚本使用 Playwright 的 `route` 机制拦截中国移动官网的所有 XHR/fetch 请求，自动识别并解析以下 API：
-
-| API | 用途 |
-|-----|------|
-| `getNewMarginInfo` | 流量/语音/短信用量 |
-| `getMainPlan` | 当前套餐名称 |
-| `getMarginQueryInfo` | 客户归属地信息 |
-| `getCustBaseInfo` | 客户基本信息（城市） |
-| `fareBalance` | 话费余额 |
-| `accountFeeBalanceQuery` | 实时费用 |
-| `getBillSum` | 本月账单 |
-
-### AES 解密
-
-中国移动的部分 API 响应使用 AES-128-CBC 加密：
-- Key: `1234123412ABCDEF`
-- IV: `ABCDEF1234123412`
-
-脚本自动检测并解密响应体，无需手动处理。
-
-## 注意事项
-
-1. **验证码** — 登录时需要手动输入短信验证码（脚本会等待用户输入）
-2. **账单查询较慢** — `本月账单`/`实际应缴`/`优惠合计` 需要访问账单页面，默认关闭，需要时再在配置文件中开启
-3. **Windows 路径** — 脚本在 Windows 下使用 Git Bash 路径格式（`/c/Users/...`）
-
 ## Docker 部署
 
 容器化部署适合服务器定时运行，无需本地环境。
@@ -284,18 +257,15 @@ docker-compose up --build
 
 详见 [QINGLONG.md](./QINGLONG.md)
 
-**核心思路：**
-
-- 青龙环境**支持 Playwright**时：直接在青龙依赖管理中安装 `playwright`，然后执行 `playwright install chromium`
-- 青龙环境**不支持 Playwright**时（资源受限）：在本地完成登录，将 `chinamobile_data/<手机号>/playwright_user_data/` 目录**手动复制到青龙对应路径**，即可免浏览器查询
+**核心思路：** 在青龙「依赖管理」中安装 `playwright`，然后执行 `playwright install chromium`，即可全自动化运行。
 
 **快速步骤：**
 
 1. 将 `chinamobile.py` 上传到青龙「脚本管理」
-2. 在本地运行 `python chinamobile.py --login 你的手机号` 完成登录
-3. 将 `chinamobile_data/` 整个目录上传/复制到青龙脚本同级目录
-4. 在青龙「定时任务」中新建任务，命令填 `task chinamobile.py --query`
-
+2. 在青龙「依赖管理」中安装 `playwright` 和 `requests`
+3. 执行 `playwright install chromium --with-deps` 安装浏览器
+4. 创建 `chinamobile_config.json` 配置文件
+5. 在青龙「定时任务」中新建任务，命令填 `task chinamobile.py --query`
 
 ## 项目结构
 
@@ -311,11 +281,44 @@ ChinaMobileMonitor/
 │   │   └── query_results/        # 查询结果 JSON（--json 时）
 │   └── 157****5975/
 │       └── ...
+├── Dockerfile                     # Docker 镜像定义
+├── docker-compose.yml            # Docker Compose 编排
 ├── requirements.txt               # Python 依赖
-├── 查询话费.bat                 # Windows 快捷启动
+├── 查询话费.bat                 # Windows 快捷查询
+├── 登录.bat                     # Windows 交互登录
 ├── .gitignore
 └── README.md
 ```
+
+## 技术说明
+
+### API 拦截原理
+
+脚本使用 Playwright 的 `route` 机制拦截中国移动官网的所有 XHR/fetch 请求，自动识别并解析以下 API：
+
+| API | 用途 |
+|-----|------|
+| `getNewMarginInfo` | 流量/语音/短信用量 |
+| `getMainPlan` | 当前套餐名称 |
+| `getMarginQueryInfo` | 客户归属地信息 |
+| `getCustBaseInfo` | 客户基本信息（城市） |
+| `fareBalance` | 话费余额 |
+| `accountFeeBalanceQuery` | 实时费用 |
+| `getBillSum` | 本月账单 |
+
+### AES 解密
+
+中国移动的部分 API 响应使用 AES-128-CBC 加密：
+- Key: `1234123412ABCDEF`
+- IV: `ABCDEF1234123412`
+
+脚本自动检测并解密响应体，无需手动处理。
+
+## 注意事项
+
+1. **验证码** — 登录时需要手动输入短信验证码（脚本会等待用户输入，也可直接在浏览器中输入）
+2. **账单查询较慢** — `本月账单`/`实际应缴`/`优惠合计` 需要访问账单页面，默认关闭，需要时再在配置文件中开启
+3. **登录状态设备绑定** — 登录状态与设备绑定，不能跨设备复制使用，需在本机完成登录
 
 ## 免责声明
 

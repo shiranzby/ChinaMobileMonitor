@@ -327,43 +327,113 @@ async def login(phone: str):
             if (ph && (ph.includes('频繁') || ph.includes('过多') || ph.includes('稍后') || ph.includes('失败'))) return ph;
             return '';
         }""")
+        # ── 实时监测登录状态（异步任务）──────────────────────────────────────────
+        async def monitor_login():
+            """每 3 秒检查一次页面，检测到登录成功立即返回 True"""
+            while True:
+                await asyncio.sleep(3)
+                try:
+                    page_text = await page.evaluate("() => document.body.innerText")
+                    if any(kw in page_text for kw in ("退出", "余额", "套餐", "我的")):
+                        return True
+                except Exception:
+                    # 浏览器已关闭
+                    return False
+
+        # ── 等待用户在 cmd 输入验证码（异步任务）────────────────────────────────
+        async def wait_user_code():
+            """在 executor 中跑 input()，用户输入后返回验证码字符串"""
+            loop = asyncio.get_event_loop()
+            try:
+                code = await loop.run_in_executor(
+                    None,
+                    safe_input,
+                    "\n请在浏览器中输入验证码，或在此输入验证码后按回车（直接回车跳过）: ",
+                )
+                return code.strip()
+            except Exception:
+                return None
+
+        # ── "获取验证码过多" 的处理 ───────────────────────────────────────────
         if send_error:
-            print(f"  发送失败: {send_error}")
+            print(f"\n  发送失败: {send_error}")
+            print("提示：请手动尝试语音验证码填入，或直接在浏览器中完成登录。")
+            print("      脚本正在实时监测登录状态，登录成功后自动关闭浏览器...")
+            print("      按 Ctrl+C 可中断。\n")
+
+            monitor_task = asyncio.create_task(monitor_login())
+            try:
+                login_ok = await monitor_task
+            except KeyboardInterrupt:
+                print("\n用户中断，正在退出...")
+                await context.close()
+                return False
+
+            if login_ok:
+                print("\n登录成功！")
+            else:
+                print("\n浏览器已关闭。")
             await context.close()
-            return False
+            print(f"\n登录完成！状态已保存到: {user_data_dir}")
+            print(f"下次查询时自动复用该状态。")
+            return True
 
-        # 等待用户输入验证码
-        code = safe_input("\n请输入收到的验证码: ")
-        if not code:
-            print("未输入验证码，退出")
-            await context.close()
-            return False
+        # ── 正常流程：同时监测登录状态 + 等待用户输入验证码 ────────────────
+        print("\n验证码已发送！")
+        print("  方式一：直接在浏览器中输入验证码完成登录（脚本会自动监测）")
+        print("  方式二：在此输入验证码后按回车（脚本代为填入）\n")
 
-        # 填写验证码并登录
-        print("填写验证码并登录...")
-        await page.evaluate(f"""() => {{
-            const inp = document.querySelector('#code') || document.querySelector('input[placeholder*="验证码"]');
-            if (inp) {{
-                inp.removeAttribute('readonly');
-                inp.value = '{code}';
-                inp.dispatchEvent(new Event('input', {{bubbles:true}}));
-            }}
-            const btn = document.querySelector('#loginBtn') || document.querySelector('button[type="submit"]');
-            if (btn) btn.click();
-            return 'done';
-        }}""")
+        monitor_task = asyncio.create_task(monitor_login())
+        input_task  = asyncio.create_task(wait_user_code())
 
-        print("等待登录完成...")
-        await asyncio.sleep(5)
+        done, pending = await asyncio.wait(
+            {monitor_task, input_task},
+            return_when=asyncio.FIRST_COMPLETED,
+        )
 
-        # 检查是否登录成功
-        current_url = page.url
-        print(f"\n当前 URL: {current_url}")
-        page_text = await page.evaluate("() => document.body.innerText")
-        if "退出" in page_text or "余额" in page_text or "套餐" in page_text or "我的" in page_text:
-            print("登录成功！")
-        else:
-            print("未检测到登录成功标志，但状态已保存")
+        # 哪个任务先完成？
+        for task in done:
+            result = task.result()
+
+            if result is True:
+                # monitor_login 检测到登录成功
+                print("\n登录成功！")
+                break
+
+            if isinstance(result, str) and result:
+                # 用户输入了验证码 → 填入浏览器，然后继续监测
+                print(f"\n收到验证码，正在填入...")
+                await page.evaluate(f"""() => {{
+                    const inp = document.querySelector('#code') || document.querySelector('input[placeholder*="验证码"]');
+                    if (inp) {{
+                        try {{ inp.removeAttribute('readonly'); }} catch(e) {{}}
+                        inp.value = '{result}';
+                        inp.dispatchEvent(new Event('input', {{bubbles:true}}));
+                    }}
+                    const btn = document.querySelector('#loginBtn') || document.querySelector('button[type="submit"]');
+                    if (btn) {{
+                        btn.click();
+                        return 'done';
+                    }}
+                    return 'no-btn';
+                }}""")
+                print("验证码已填入，等待登录完成...\n")
+
+        # 取消尚未完成的任务
+        for task in pending:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+        # 如果是因为用户输入验证码而走到这里，还需要再等一下登录完成
+        try:
+            final_check = await monitor_login()
+            if final_check:
+                print("登录成功！")
+        except Exception:
+            pass
 
         await context.close()
         print(f"\n登录完成！状态已保存到: {user_data_dir}")
@@ -657,12 +727,8 @@ def load_config() -> tuple:
     return phones, global_output, notify_config
 
 
-def save_config(phones: list, global_output: dict):
+def save_config(phones: list, global_output: dict, notify_config: dict = None):
     """保存配置到 JSON 文件"""
-    data = {
-        "手机号": [{"号码": p["phone"]} for p in phones],
-        "输出设置": {v: k for k, v in FIELD_MAP.items() if k in global_output and global_output[k]},
-    }
     # 保留中文 key
     cn_output = {}
     for en_key, val in global_output.items():
@@ -671,7 +737,12 @@ def save_config(phones: list, global_output: dict):
             cn_output[cn_key[0]] = val
         else:
             cn_output[en_key] = val
-    data["输出设置"] = cn_output
+    data = {
+        "手机号": [{"号码": p["phone"]} for p in phones],
+        "输出设置": cn_output,
+    }
+    if notify_config is not None:
+        data["通知推送"] = notify_config
     CONFIG_FILE.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -680,10 +751,10 @@ def save_config(phones: list, global_output: dict):
 
 def add_phone_to_config(phone: str):
     """向配置文件添加手机号（如不存在）"""
-    phones, global_output = load_config()
+    phones, global_output, notify_config = load_config()
     if not any(p["phone"] == phone for p in phones):
         phones.append({"phone": phone})
-        save_config(phones, global_output)
+        save_config(phones, global_output, notify_config)
         print(f"  已添加 {phone} 到配置文件")
     else:
         print(f"  {phone} 已在配置文件中")
